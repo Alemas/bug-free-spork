@@ -8,14 +8,20 @@
 #ifndef __APPLE__
 #include <GL/gl.h>
 #include <GL/glut.h>
+#include <GL/glu.h>
 #else
 #include <OpenGL/gl.h>
 #include <GLUT/glut.h>
+#include <GL/glu.h>
 #endif
 #include <AR/gsub.h>
 #include <AR/video.h>
 #include <AR/param.h>
 #include <AR/ar.h>
+#include <math.h>
+
+#define PI 3.1415927
+
 
 //
 // Camera configuration.
@@ -41,6 +47,8 @@ int             patt_id;
 double          patt_width     = 80.0;
 double          patt_center[2] = {0.0, 0.0};
 double          patt_trans[3][4];
+
+//GLUquadricObj* cylinderQuad;
 
 static void   init(void);
 static void   cleanup(void);
@@ -184,14 +192,44 @@ static void loadIdentity(double identity[16]) {
     glLoadMatrixd(identity);
 }
 
-static void drawMug(double i[16]) {
-    loadIdentity(i);
+static void drawMug(GLfloat radius, GLfloat height)
+{
+    GLfloat x              = 0.0;
+    GLfloat y              = 0.0;
+    GLfloat angle          = 0.0;
+    GLfloat angle_stepsize = 0.1;
 
-    float height = 50.0;
-    glTranslatef(0.0, 0.0, height/2);
-    GLUquadricObj *quad;
-    quad = gluNewQuadric();
-    gluCylinder(quad, 30.0, 30.0, height, 10.0, 1.0);
+    GLubyte R = 200;
+    GLubyte G = 200;
+    GLubyte B = 200;
+
+    /** Draw the tube */
+    glColor3ub(R-40,G-40,B-40);
+    glBegin(GL_QUAD_STRIP);
+    angle = 0.0;
+        while( angle < 2*PI ) {
+            x = radius * cos(angle);
+            y = radius * sin(angle);
+            glVertex3f(x, y , height);
+            glVertex3f(x, y , 0.0);
+            angle = angle + angle_stepsize;
+        }
+        glVertex3f(radius, 0.0, height);
+        glVertex3f(radius, 0.0, 0.0);
+    glEnd();
+
+    /** Draw the circle on top of cylinder */
+    glColor3ub(R,G,B);
+    glBegin(GL_POLYGON);
+    angle = 0.0;
+        while( angle < 2*PI ) {
+            x = radius * cos(angle);
+            y = radius * sin(angle);
+            glVertex3f(x, y , height);
+            angle = angle + angle_stepsize;
+        }
+        glVertex3f(radius, 0.0, height);
+    glEnd();
 }
 
 static void draw( void )
@@ -226,17 +264,18 @@ static void draw( void )
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
     glMatrixMode(GL_MODELVIEW);
 
-    //First Cube
-    glColorMask(0, 0, 0, 0);
-    glTranslatef( 0.0, 0.0, 25.0 );
-    glutSolidCube(50.0);
+    //Mug draw
+//    glColorMask(0, 0, 0, 0);
+    glTranslatef( 0.0, 0.0, 0.0 );
+    drawMug(30.0, 50.0);
 
+    //Load Identity
     glLoadMatrixd(gl_para);
 
-    //Second Cube
+    //Ball draw
     glColorMask(1, 1, 1, 1);
     glTranslatef(100.0, 0.0, 25.0);
-    glutSolidCube(50.0);
+//    drawBall();
 
     glDisable( GL_LIGHTING );
     glDisable( GL_DEPTH_TEST );
